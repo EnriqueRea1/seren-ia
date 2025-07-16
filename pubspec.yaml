@@ -1,0 +1,29 @@
+name: serenia
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.14.0
+  firebase_auth: ^5.6.0  
+  cloud_firestore: ^5.6.9
+  fl_chart: ^0.66.0
+  card_swiper: ^3.0.1
+  http: ^1.4.0
+  percent_indicator: ^4.2.5
+  intl: ^0.18.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  assets:
+    - assets/
+  uses-material-design: true
