@@ -17,6 +17,7 @@ dependencies:
   http: ^1.4.0
   percent_indicator: ^4.2.5
   intl: ^0.18.1
+  google_fonts: ^6.3.0
 
 dev_dependencies:
   flutter_test:
