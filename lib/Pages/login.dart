@@ -3,15 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../Widgets/header.dart';
 import '../Widgets/textFieldCustom.dart';
 import '../app/auth_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-// Nueva paleta de colores oscura, limpia (estilo iPhone Dark Mode)
-const Color bgColor = Color(0xFF1C1C1E); // Fondo muy oscuro (casi negro, con un toque de gris)
-const Color cardBgColor = Color(0xFF2C2C2E); // Fondo de tarjeta un poco más claro que el fondo
-const Color primaryTextColor = Colors.white; // Texto principal blanco
-const Color secondaryTextColor = Color(0xFF8E8E93); // Texto secundario gris claro
-const Color accentColor = Color(0xFF0A84FF); // Azul vibrante para acentos (similar al azul de iOS)
-const Color accentColorLight = Color(0xFF32ADE6); // Un azul más claro si se necesita, aunque no lo usaremos en el botón
-
+// Paleta azul vibrante pero suave - feliz y minimalista
+const Color bgColor = Color(0xFF3B82F6); // Azul vibrante pero no saturado
+const Color cardBgColor = Color(0xFF60A5FA); // Azul alegre medio
+const Color primaryTextColor = Colors.white;
+const Color secondaryTextColor = Color(0xFFDDEAFF); // Azul muy claro pero vibrante
+const Color accentColor = Color(0xFF93C5FD); // Azul claro vibrante
+const Color accentColorLight = Color(0xFFBFDBFE); // Azul suave pero vivo
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,12 +26,11 @@ class _LoginPageState extends State<LoginPage> {
   bool isLoading = false;
 
   void login() async {
-    // Validaciones básicas
     if (emailController.text.trim().isEmpty || passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Por favor completa todos los campos"),
-          backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
+          backgroundColor: Color(0xFF60A5FA),
           duration: Duration(seconds: 2),
         ),
       );
@@ -47,16 +46,14 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
-        // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("✅ Inicio de sesión exitoso"),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
+            content: Text("Inicio de sesión exitoso"),
+            backgroundColor: Color(0xFF60A5FA),
             duration: Duration(seconds: 2),
           ),
         );
 
-        // Redireccionar a home después de un breve delay
         await Future.delayed(const Duration(milliseconds: 500));
 
         if (mounted) {
@@ -70,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("❌ $errorMessage"),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
+            backgroundColor: const Color(0xFF60A5FA),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -79,8 +76,8 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("❌ Error inesperado. Intenta nuevamente."),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
+            content: Text("Error inesperado. Intenta nuevamente."),
+            backgroundColor: Color(0xFF5577AA),
             duration: Duration(seconds: 4),
           ),
         );
@@ -112,29 +109,36 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor, // Fondo muy oscuro
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Usamos el Header ya existente
-            // **IMPORTANTE:** Si tu Header tiene colores fijos claros,
-            // puede que necesites ajustar su implementación para que se vea bien
-            // sobre un fondo oscuro, o que acepte un parámetro para el color de texto.
-            const Header(
+            Header(
               title: '¡Hola!',
               subtitle: 'Bienvenido de vuelta a SerenIA',
+              titleColor: primaryTextColor,
+              subtitleColor: secondaryTextColor,
+              accentColor: accentColorLight,
+              backgroundColor: bgColor,
             ),
-
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: cardBgColor, // Fondo de la tarjeta un poco más claro
+                  color: cardBgColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3), // Sombra más visible en oscuro
+                      color: Colors.black.withOpacity(0.15),
                       blurRadius: 15,
                       offset: const Offset(0, -5),
                     ),
@@ -145,120 +149,92 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Iniciar Sesión',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: primaryTextColor, // Texto blanco
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          // **IMPORTANTE:** Asegúrate de que el LogoWidget se vea bien
-                          // sobre el fondo oscuro de cardBgColor.
-                          // Puede que necesite un asset diferente o lógica para invertir colores.
-                        ],
+                      Text(
+                        'Iniciar Sesión',
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: primaryTextColor,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Ingresa tus credenciales para continuar',
-                        style: TextStyle(
+                        'Ingresa para continuar',
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
-                          color: secondaryTextColor, // Texto gris claro
+                          color: secondaryTextColor,
                         ),
                       ),
                       const SizedBox(height: 32),
+
                       CustomTextField(
                         icon: Icons.email_outlined,
                         hintText: 'Correo electrónico',
                         controller: emailController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       CustomTextField(
                         icon: Icons.lock_outline,
                         hintText: 'Contraseña',
                         obscureText: true,
                         controller: passwordController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
-                      ),
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Función de recuperación próximamente"),
-                                backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            '¿Olvidaste tu contraseña?',
-                            style: TextStyle(
-                              color: accentColor, // Texto azul
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                       ),
                       const SizedBox(height: 32),
-                      // Botón sin gradiente, con color sólido
+
                       ElevatedButton(
                         onPressed: isLoading ? null : login,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
-                          backgroundColor: accentColor, // Fondo del botón azul sólido
-                          foregroundColor: primaryTextColor, // Color del texto del botón blanco
+                          backgroundColor: accentColorLight,
+                          foregroundColor: primaryTextColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          elevation: 5, // Una sombra sutil para el botón
-                          shadowColor: accentColor.withOpacity(0.3), // Sombra que combine con el botón
+                          elevation: 8,
+                          shadowColor: accentColorLight.withOpacity(0.4),
                         ),
                         child: isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white, // Indicador blanco para fondo azul
+                                  color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Iniciar Sesión',
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF3B82F6),
                                 ),
                               ),
                       ),
                       const SizedBox(height: 24),
+
                       Row(
                         children: [
                           Expanded(
                             child: Container(
                               height: 1,
-                              color: secondaryTextColor.withOpacity(0.3), // Separador gris translúcido
+                              color: secondaryTextColor.withOpacity(0.4),
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'o',
-                              style: TextStyle(
-                                color: secondaryTextColor, // Texto gris claro
+                              style: GoogleFonts.poppins(
+                                color: secondaryTextColor,
                                 fontSize: 14,
                               ),
                             ),
@@ -266,19 +242,20 @@ class _LoginPageState extends State<LoginPage> {
                           Expanded(
                             child: Container(
                               height: 1,
-                              color: secondaryTextColor.withOpacity(0.3), // Separador gris translúcido
+                              color: secondaryTextColor.withOpacity(0.4),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             '¿No tienes una cuenta? ',
-                            style: TextStyle(
-                              color: secondaryTextColor, // Texto gris claro
+                            style: GoogleFonts.poppins(
+                              color: secondaryTextColor,
                               fontSize: 14,
                             ),
                           ),
@@ -286,9 +263,9 @@ class _LoginPageState extends State<LoginPage> {
                             onTap: () => Navigator.pushNamed(context, 'signup'),
                             child: Text(
                               'Regístrate',
-                              style: TextStyle(
-                                color: accentColor, // Texto azul
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
                             ),

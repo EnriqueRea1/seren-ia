@@ -1,0 +1,29 @@
+# Archivos generados por Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+build/
+
+# Archivos de configuración de IDEs
+.idea/
+.vscode/
+*.iml
+
+# Archivos sensibles que no deben subirse
+*.keystore
+*.jks
+key.properties
+local.properties
+
+# Archivos de log y temporales
+*.log
+pglite-debug.log
+
+# Archivos generados por plataformas específicas
+ios/Pods/
+ios/DerivedData/
+ios/.symlinks/
+android/.gradle/
+
+# Archivos de sistema operativo
+.DS_Store

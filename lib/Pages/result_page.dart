@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+// Using the same color palette from QuestionnairePage
+const Color bgColor = Color(0xFF3B82F6);
+const Color cardBgColor = Color(0xFF60A5FA);
+const Color primaryTextColor = Colors.white;
+const Color secondaryTextColor = Color(0xFFDDEAFF);
+const Color accentColor = Color(0xFF93C5FD);
+const Color accentColorLight = Color(0xFFBFDBFE);
+const Color lightCardColor = Color(0xFFF8FAFC);
 
 class ResultPage extends StatefulWidget {
-  final int total; // Puntaje total del cuestionario
-  final int level; // Nivel predicho (0-3)
-  final String carrera; // Carrera del estudiante (ej. "Ingeniería Informática")
-  final String cuestionario; // Tipo: "BAI", "BDI" o "PSS"
+  final int total;
+  final int level;
+  final String carrera;
+  final String cuestionario;
 
   const ResultPage({
     super.key,
@@ -22,9 +34,9 @@ class ResultPage extends StatefulWidget {
 }
 
 class _ResultPageState extends State<ResultPage> {
-  String? recomendacion; // Respuesta de la API
-  bool cargando = false; // Estado de carga
-  String? mensajeError; // Mensaje de error si falla la API
+  String? recomendacion;
+  bool cargando = false;
+  String? mensajeError;
 
   @override
   void initState() {
@@ -32,15 +44,12 @@ class _ResultPageState extends State<ResultPage> {
     obtenerRecomendacion();
   }
 
-  // Asegúrate de limpiar los recursos si el widget se descarta
   @override
   void dispose() {
-    // Si tuvieras temporizadores o listeners que necesiten ser cancelados, hazlo aquí.
     super.dispose();
   }
 
   Future<void> obtenerRecomendacion() async {
-    // Primero, verifica si el widget sigue montado antes de llamar a setState
     if (!mounted) return;
 
     setState(() {
@@ -48,11 +57,9 @@ class _ResultPageState extends State<ResultPage> {
       mensajeError = null;
     });
 
-    // Descripciones de niveles según BAI/BDI/PSS
     const descripcionesNiveles = ['mínimo', 'leve', 'moderado', 'severo'];
     final nivelTexto = descripcionesNiveles[widget.level];
 
-    // Crear un prompt más específico según el nivel
     String obtenerPromptPersonalizado() {
       String tipoEvaluacion = widget.cuestionario == 'BAI' 
           ? 'Ansiedad (Beck Anxiety Inventory)' 
@@ -76,22 +83,34 @@ class _ResultPageState extends State<ResultPage> {
           break;
       }
       
-      return '''
+     return '''
 Eres un psicólogo especializado en salud mental estudiantil. Un estudiante de ${widget.carrera} ha completado la evaluación de $tipoEvaluacion con estos resultados:
 
 - Puntaje: ${widget.total}
 - Nivel: $nivelTexto (${widget.level}/3)
 - Contexto: $contextoNivel
 
-Proporciona una recomendación específica (máximo 120 palabras) que incluya:
-1. Interpretación empática del resultado
-2. 2-3 estrategias concretas y aplicables
-3. Recursos específicos para estudiantes universitarios
-${widget.level >= 2 ? '4. Importancia de buscar apoyo profesional' : ''}
+Proporciona una recomendación específica (que sea bastante breve) con este formato EXACTO:
 
-Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas preguntas al final, solo proporciona las recomendaciones de forma conclusiva.
-      ''';
-    }
+📌 Interpretación del resultado
+[Texto breve de 1-2 oraciones explicando el nivel]
+Quiero que las estrategias sean prácticas y aplicables por el estudiante sin necesidad de asistencia profesional ni con areas de la universidad.
+💡 Estrategias recomendadas
+1. [Primera estrategia práctica]
+2. [Segunda estrategia práctica]
+3. [Tercera estrategia opcional]
+
+✨ Palabras finales
+[Mensaje motivacional breve]
+
+REGLAS ESTRICTAS:
+- NO uses markdown (**negritas** o _cursivas_)
+- NO uses asteriscos para énfasis
+- Usa solo los emojis proporcionados (📌💡✨) como separadores
+- Mantén un tono empático pero profesional
+- Enfócate en acciones que el estudiante pueda realizar por sí mismo, no recomiendes terapia o asistencia profesional o grupos de apoyo
+''';
+}
 
     final prompt = obtenerPromptPersonalizado();
 
@@ -99,14 +118,13 @@ Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas p
       final respuesta = await http.post(
         Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
         headers: {
-          'Authorization':
-              'Bearer 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',
+          'Authorization': 'Bearer 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',
           'Content-Type': 'application/json',
           'HTTP-Referer': '',
           'X-Title': 'SerenIA',
         },
         body: jsonEncode({
-          'model': 'openrouter/cypher-alpha:free',
+          'model': 'moonshotai/kimi-k2:free',
           'messages': [
             {
               'role': 'system',
@@ -115,11 +133,10 @@ Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas p
             {'role': 'user', 'content': prompt},
           ],
           'max_tokens': 200,
-          'temperature': 0.7, // Un poco de creatividad pero manteniendo consistencia
+          'temperature': 0.7,
         }),
       );
 
-      // Vuelve a verificar si el widget sigue montado antes de actualizar el estado
       if (!mounted) return;
 
       if (respuesta.statusCode == 200) {
@@ -128,15 +145,44 @@ Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas p
           recomendacion = datos['choices'][0]['message']['content'].trim();
           cargando = false;
         });
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null && recomendacion != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('recomendaciones')
+              .add({
+                'fecha': FieldValue.serverTimestamp(),
+                'cuestionario': widget.cuestionario,
+                'nivel': widget.level,
+                'puntaje': widget.total,
+                'carrera': widget.carrera,
+                'recomendacion': recomendacion,
+              });
+        }
       } else {
+        String mensajeEspecifico;
+        switch (respuesta.statusCode) {
+          case 401:
+            mensajeEspecifico = 'Error 401: No autorizado.\nVerifica que tu API Key sea válida o tenga permisos.';
+            break;
+          case 404:
+            mensajeEspecifico = 'Error 404: No encontrado.\nVerifica que el modelo o la URL del endpoint estén correctos.';
+            break;
+          case 429:
+            mensajeEspecifico = 'Error 429: Demasiadas solicitudes.\nIntenta de nuevo más tarde.';
+            break;
+          default:
+            mensajeEspecifico = 'Error desconocido (${respuesta.statusCode}): ${respuesta.body}';
+        }
+
         setState(() {
-          mensajeError =
-              'Error al obtener recomendación: ${respuesta.statusCode}';
+          mensajeError = mensajeEspecifico;
           cargando = false;
         });
       }
     } catch (e) {
-      // Vuelve a verificar si el widget sigue montado en el bloque catch
       if (!mounted) return;
 
       setState(() {
@@ -149,13 +195,41 @@ Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas p
   Color _obtenerColorProgreso(int nivel) {
     switch (nivel) {
       case 0:
-        return const Color(0xFF00FFAA); // Verde
+        return const Color(0xFF10B981); // Verde
       case 1:
-        return const Color(0xFFFFE600); // Amarillo
+        return const Color(0xFFF59E0B); // Amarillo
       case 2:
-        return const Color(0xFFFF7B00); // Naranja
+        return const Color(0xFFF97316); // Naranja
       default:
-        return const Color(0xFFFF007A); // Rosa
+        return const Color(0xFFEF4444); // Rojo
+    }
+  }
+
+  String _getLevelDescription(int level) {
+    switch (level) {
+      case 0:
+        return 'Mínimo';
+      case 1:
+        return 'Leve';
+      case 2:
+        return 'Moderado';
+      case 3:
+        return 'Severo';
+      default:
+        return '';
+    }
+  }
+
+  String _getQuestionnaireTitle() {
+    switch (widget.cuestionario) {
+      case 'BAI':
+        return 'Ansiedad';
+      case 'BDI':
+        return 'Depresión';
+      case 'PSS':
+        return 'Estrés';
+      default:
+        return '';
     }
   }
 
@@ -164,152 +238,300 @@ Usa un tono empático, motivador y enfocado en soluciones prácticas. NO hagas p
     final puntajeMaximo = widget.cuestionario == 'PSS' ? 42 : 63;
     final progreso = (widget.total / puntajeMaximo).clamp(0.0, 1.0);
     final color = _obtenerColorProgreso(widget.level);
-    final anchoPantalla = MediaQuery.of(context).size.width;
+    final levelDescription = _getLevelDescription(widget.level);
+    final questionnaireTitle = _getQuestionnaireTitle();
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Resultados'),
-        backgroundColor: Colors.grey[900],
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: anchoPantalla > 600 ? 80 : 24,
-          ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Card(
-              color: Colors.grey[900],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey[800]!, width: 1),
-              ),
-              elevation: 4,
-              // *** CAMBIO CLAVE AQUÍ: Envuelve el Padding con SingleChildScrollView ***
-              child: SingleChildScrollView(
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header section
+              Container(
                 padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      bgColor,
+                      cardBgColor.withOpacity(0.8),
+                    ],
+                  ),
+                ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Permite que la columna ocupe solo el espacio necesario
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularPercentIndicator(
-                      radius: 90.0,
-                      lineWidth: 14.0,
-                      animation: true,
-                      percent: progreso,
-                      circularStrokeCap: CircularStrokeCap.round,
-                      backgroundColor: Colors.white12,
-                      progressColor: color,
-                      center: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${(progreso * 100).toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Resultados',
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: primaryTextColor,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${widget.total} / $puntajeMaximo',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: Icon(
+                            Icons.close_rounded,
+                            color: primaryTextColor,
+                            size: 24,
                           ),
-                        ],
-                      ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Text(
-                      'Nivel: ${widget.level}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '¡Sigue esforzándote para mejorar tu bienestar!',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[400],
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    // Mostrar recomendación, carga o error
-                    if (cargando)
-                      const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      )
-                    else if (mensajeError != null)
-                      Text(
-                        mensajeError!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.red[400],
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                    else if (recomendacion != null)
-                      Text(
-                        recomendacion!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[300],
-                          fontWeight: FontWeight.w400,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          'questionnaire',
-                          (route) => false,
-                        );
-                      },
-                      icon: const Icon(Icons.arrow_forward, size: 20),
-                      label: const Text(
-                        'Volver al inicio',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 24,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 4,
-                        shadowColor: color.withOpacity(0.5),
+                      questionnaireTitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              
+              // Main content
+              Container(
+                decoration: BoxDecoration(
+                  color: lightCardColor,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
+                ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Score card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          CircularPercentIndicator(
+                            radius: 80.0,
+                            lineWidth: 14.0,
+                            animation: true,
+                            percent: progreso,
+                            circularStrokeCap: CircularStrokeCap.round,
+                            backgroundColor: accentColorLight.withOpacity(0.2),
+                            progressColor: color,
+                            center: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${widget.total}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                Text(
+                                  '/ $puntajeMaximo',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: color.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              levelDescription,
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: color,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Nivel ${widget.level}/3',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Recommendation section
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.lightbulb_outline_rounded,
+                                  color: accentColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Recomendaciones',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          if (cargando)
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: accentColor,
+                              ),
+                            )
+                          else if (mensajeError != null)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEE2E2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: const Color(0xFFDC2626),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      mensajeError!,
+                                      style: GoogleFonts.poppins(
+                                        color: const Color(0xFFDC2626),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (recomendacion != null)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFD1FAE5),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    recomendacion!,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      color: const Color(0xFF065F46),
+                                      height: 1.5,
+                                    ),
+                                    textAlign: TextAlign.start,
+                                  ),
+                                  const SizedBox(height: 12),                                  
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Action buttons
+                    SizedBox( 
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: cardBgColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Volver al inicio',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

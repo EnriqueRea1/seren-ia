@@ -5,7 +5,9 @@ import 'Pages/result_page.dart';
 import 'Pages/bai.dart';
 import 'Pages/bdi.dart';
 import 'Pages/pss.dart';
-import 'Pages/questionnaire_page.dart'; // Import the new questionnaire page
+import 'Pages/questionnaire_page.dart';
+import 'Pages/recomendaciones.dart';
+import 'Pages/profile.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -54,7 +56,10 @@ class MainApp extends StatelessWidget {
               carrera: '',
               cuestionario: '', // Placeholder values
             ),
-        'questionnaire': (context) => const QuestionnairePage(), // New route
+        'questionnaire': (context) => const QuestionnairePage(),
+        'recomendaciones': (context) => const RecomendacionesPage(),
+        'profile': (context) => const ProfilePage(),
+
       },
     );
   }

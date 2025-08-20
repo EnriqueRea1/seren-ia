@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'result_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'result_page.dart';
+
+// Paleta de colores consistente
+const Color bgColor = Color(0xFF3B82F6);
+const Color cardBgColor = Color(0xFF60A5FA);
+const Color primaryTextColor = Colors.white;
+const Color secondaryTextColor = Color(0xFFDDEAFF);
+const Color accentColor = Color(0xFF93C5FD);
+const Color accentColorLight = Color(0xFFBFDBFE);
 
 class BdiPageView extends StatefulWidget {
   const BdiPageView({super.key});
@@ -19,27 +28,27 @@ class _BdiPageViewState extends State<BdiPageView> {
   final Map<int, int> responses = {};
 
   final List<String> bdiQuestions = [
-    "Tristeza",
-    "Pesimismo",
-    "Fracaso",
-    "Pérdida de Placer",
-    "Sentimientos de Culpa",
-    "Sentimientos de Castigo",
-    "Disconformidad con uno mismo",
-    "Autocrítica",
-    "Pensamientos o Deseos Suicidas",
-    "Llanto",
-    "Agitación",
-    "Pérdida de Interés",
-    "Indecisión",
-    "Desvalorización",
-    "Pérdida de Energía",
-    "Cambios en los Hábitos de Sueño",
-    "Irritabilidad",
-    "Cambios en el Apetito",
-    "Dificultad de Concentración",
-    "Cansancio o Fatiga",
-    "Pérdida de Interés en el Sexo",
+    "assets/p1_tristeza.png",
+    "assets/p2_pesimismo.png",
+    "assets/p3_fracaso.png",
+    "assets/p4_placer.png",
+    "assets/p5_culpa.png",
+    "assets/p6_castigo.png",
+    "assets/p7_disconformidad.png",
+    "assets/p8_autocritica.png",
+    "assets/p9_suicidio.png",
+    "assets/p10_llanto.png",
+    "assets/p11_agitacion.png",
+    "assets/p12_interes.png",
+    "assets/p13_indecision.png",
+    "assets/p14_indecision.png",
+    "assets/p15_energia.png",
+    "assets/p16_sueno.png",
+    "assets/p17_irritabilidad.png",
+    "assets/p18_apetito.png",
+    "assets/p19_concentracion.png",
+    "assets/p20_fatiga.png",
+    "assets/p21_sexualidad.png",
   ];
 
   final List<List<String>> opciones = [
@@ -152,10 +161,10 @@ class _BdiPageViewState extends State<BdiPageView> {
       "No tengo apetito en absoluto o quiero comer todo el día.",
     ],
     [
-      "No estoy más cansado o fatigado que lo habitual.",
-      "Me fatigo o me canso más fácilmente que lo habitual.",
-      "Estoy demasiado fatigado o cansado para hacer muchas de las cosas que solía hacer.",
-      "Estoy demasiado fatigado o cansado para hacer la mayoría de las cosas que solía.",
+      "Puedo concentrarme tan bien como siempre.",
+      "No puedo concentrarme tan bien como habitualmente .",
+      "Me es difícil mantener la mente en algo por mucho tiempo.",
+      "Encuentro que no puedo concentrarme en nada.",
     ],
     [
       "No estoy más cansado o fatigado que lo habitual.",
@@ -305,209 +314,243 @@ class _BdiPageViewState extends State<BdiPageView> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Depresión'),
-        backgroundColor: Colors.grey[900],
-        foregroundColor: Colors.white,
+        title: Text(
+          'Cuestionario de Depresión',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: primaryTextColor,
+          ),
+        ),
+        backgroundColor: bgColor,
+        foregroundColor: primaryTextColor,
         centerTitle: true,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: primaryTextColor),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: primaryTextColor),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: Swiper(
-        controller: _swiperController,
-        itemCount: bdiQuestions.length,
-        loop: false,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: screenWidth > 600 ? 80 : 24,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 600,
-                  maxHeight: screenHeight * 0.7,
+      body: Column(
+        children: [
+          // Barra de progreso
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pregunta ${currentIndex + 1}',
+                      style: GoogleFonts.poppins(
+                        color: secondaryTextColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${currentIndex + 1} de ${bdiQuestions.length}',
+                      style: GoogleFonts.poppins(
+                        color: secondaryTextColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Card(
-                  color: Colors.grey[900],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: Colors.grey[800]!, width: 1),
+                const SizedBox(height: 1),
+                LinearProgressIndicator(
+                  value: (currentIndex + 1) / bdiQuestions.length,
+                  backgroundColor: Colors.white.withOpacity(0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(accentColorLight),
+                  borderRadius: BorderRadius.circular(8),
+                  minHeight: 8,
+                ),
+              ],
+            ),
+          ),
+          
+          // Contenido del swiper
+          Expanded(
+            child: Swiper(
+              controller: _swiperController,
+              itemCount: bdiQuestions.length,
+              loop: false,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: screenWidth > 600 ? 80 : 24,
                   ),
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Pregunta ${index + 1} de ${bdiQuestions.length}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                            fontWeight: FontWeight.w500,
-                          ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: 600,
+                        maxHeight: screenHeight * 0.67,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          bdiQuestions[index],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.white.withOpacity(0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Imagen representativa
+                              Container(
+                                height: 180, // Altura fija para la imagen
+                                padding: const EdgeInsets.all(8),
+                                child: Image.asset(
+                                  bdiQuestions[index],
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 8),
+                              
+                              // Opciones
+                              Expanded(
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  physics: const ClampingScrollPhysics(),
+                                  padding: EdgeInsets.zero,
+                                  children: List.generate(opciones[index].length, (i) {
+                                    final isSelected = responses[index] == i;
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      decoration: BoxDecoration(
+                                        color: isSelected 
+                                            ? cardBgColor.withOpacity(0.1)
+                                            : const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected 
+                                              ? cardBgColor
+                                              : const Color(0xFFE2E8F0),
+                                          width: isSelected ? 1.5 : 1,
+                                        ),
+                                      ),
+                                      child: RadioListTile<int>(
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 4,
+                                        ),
+                                        title: Text(
+                                          opciones[index][i],
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color: isSelected 
+                                                ? cardBgColor 
+                                                : const Color(0xFF475569),
+                                            fontWeight: isSelected 
+                                                ? FontWeight.w600 
+                                                : FontWeight.w500,
+                                          ),
+                                        ),
+                                        value: i,
+                                        groupValue: responses[index],
+                                        activeColor: cardBgColor,
+                                        fillColor: MaterialStateProperty.resolveWith<Color>((states) {
+                                          if (states.contains(MaterialState.selected)) {
+                                            return cardBgColor;
+                                          }
+                                          return const Color(0xFFCBD5E1);
+                                        }),
+                                        onChanged: (value) {
+                                          setState(() => responses[index] = value!);
+                                        },
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              
+                              // Botones de navegación
+                              Container(
+                                margin: const EdgeInsets.only(top: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    if (currentIndex > 0)
+                                      OutlinedButton.icon(
+                                        onPressed: _previousPage,
+                                        icon: Icon(Icons.arrow_back_rounded, size: 16),
+                                        label: Text(
+                                          'Anterior',
+                                          style: GoogleFonts.poppins(fontSize: 13),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: const Color(0xFF64748B),
+                                          side: BorderSide(
+                                            color: const Color(0xFFE2E8F0),
+                                            width: 1,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 10,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      const SizedBox.shrink(),
+                                    
+                                    ElevatedButton.icon(
+                                      onPressed: _nextPage,
+                                      icon: Icon(
+                                        index == bdiQuestions.length - 1
+                                            ? Icons.check_rounded
+                                            : Icons.arrow_forward_rounded,
+                                        size: 16,
+                                      ),
+                                      label: Text(
+                                        index == bdiQuestions.length - 1
+                                            ? 'Finalizar'
+                                            : 'Siguiente',
+                                        style: GoogleFonts.poppins(fontSize: 13),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: cardBgColor,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 10,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 32),
-                        Expanded(
-                          child: Center(
-                            child: ListView(
-                              shrinkWrap: true,
-                              physics: const ClampingScrollPhysics(),
-                              children: List.generate(opciones[index].length, (
-                                i,
-                              ) {
-                                return RadioListTile<int>(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 4,
-                                  ),
-                                  title: Text(
-                                    opciones[index][i],
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color:
-                                          responses[index] == i
-                                              ? Colors.white
-                                              : Colors.grey[300],
-                                      shadows: [
-                                        Shadow(
-                                          color:
-                                              responses[index] == i
-                                                  ? Colors.white.withOpacity(
-                                                    0.8,
-                                                  )
-                                                  : Colors.grey[300]!
-                                                      .withOpacity(0.5),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 0),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  value: i,
-                                  groupValue: responses[index],
-                                  activeColor: Colors.white,
-                                  fillColor:
-                                      MaterialStateProperty.resolveWith<Color>((
-                                        states,
-                                      ) {
-                                        if (states.contains(
-                                          MaterialState.selected,
-                                        )) {
-                                          return Colors.white;
-                                        }
-                                        return Colors.grey[600]!;
-                                      }),
-                                  onChanged: (value) {
-                                    setState(() => responses[index] = value!);
-                                  },
-                                );
-                              }),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            OutlinedButton(
-                              onPressed:
-                                  currentIndex > 0 ? _previousPage : null,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: Colors.transparent,
-                                side: BorderSide(
-                                  color:
-                                      currentIndex > 0
-                                          ? Colors.white
-                                          : Colors.grey[800]!,
-                                  width: 1.5,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                shadowColor: Colors.white.withOpacity(0.5),
-                              ),
-                              child: const Text(
-                                'Anterior',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: _nextPage,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 4,
-                                shadowColor: Colors.white.withOpacity(0.5),
-                              ),
-                              child: Text(
-                                index == bdiQuestions.length - 1
-                                    ? 'Finalizar'
-                                    : 'Siguiente',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
+              onIndexChanged: (index) => setState(() => currentIndex = index),
             ),
-          );
-        },
-        onIndexChanged: (index) => setState(() => currentIndex = index),
-        pagination: const SwiperPagination(
-          margin: EdgeInsets.only(bottom: 8),
-          builder: DotSwiperPaginationBuilder(
-            activeColor: Colors.white,
-            color: Color.fromARGB(255, 90, 90, 90),
-            size: 8,
-            activeSize: 10,
-            space: 6,
           ),
-        ),
+        ],
       ),
     );
   }

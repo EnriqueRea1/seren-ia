@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../Widgets/header.dart';
-
 import '../Widgets/textFieldCustom.dart';
 import '../app/auth_service.dart';
 
-// Paleta de colores oscura, limpia (estilo iPhone Dark Mode)
-const Color bgColor = Color(0xFF1C1C1E); // Fondo muy oscuro (casi negro, con un toque de gris)
-const Color cardBgColor = Color(0xFF2C2C2E); // Fondo de tarjeta un poco más claro que el fondo
-const Color primaryTextColor = Colors.white; // Texto principal blanco
-const Color secondaryTextColor = Color(0xFF8E8E93); // Texto secundario gris claro
-const Color accentColor = Color(0xFF0A84FF); // Azul vibrante para acentos (similar al azul de iOS)
-const Color accentColorLight = Color(0xFF32ADE6); // Un azul más claro si se necesita, aunque no lo usaremos en el botón
-
-// NOTA: Eliminamos errorColor y successColor, se usarán colores neutros en SnackBar
+// Paleta azul vibrante pero suave - feliz y minimalista (igual que login)
+const Color bgColor = Color(0xFF3B82F6); // Azul vibrante pero no saturado
+const Color cardBgColor = Color(0xFF60A5FA); // Azul alegre medio
+const Color primaryTextColor = Colors.white;
+const Color secondaryTextColor = Color(0xFFDDEAFF); // Azul muy claro pero vibrante
+const Color accentColor = Color(0xFF93C5FD); // Azul claro vibrante
+const Color accentColorLight = Color(0xFFBFDBFE); // Azul suave pero vivo
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -30,17 +28,19 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController groupController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController classController = TextEditingController();
+
+  String? selectedGender;
   bool isLoading = false;
 
   void signUp() async {
-    // Validaciones básicas
     if (nameController.text.trim().isEmpty ||
         emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
+        passwordController.text.trim().isEmpty ||
+        selectedGender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Por favor completa todos los campos obligatorios"),
-          backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
+          backgroundColor: Color(0xFF60A5FA),
           duration: Duration(seconds: 2),
         ),
       );
@@ -50,22 +50,13 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => isLoading = true);
 
     try {
-      print("Iniciando proceso de registro...");
-
-      // Crear cuenta en Firebase Auth
       UserCredential userCredential = await AuthService().createAccount(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      print("Usuario creado en Auth: ${userCredential.user!.uid}");
-
-      // Actualizar nombre de usuario en Auth
-      // Asegúrate de que AuthService().updateUserName exista y funcione correctamente
       await AuthService().updateUserName(username: nameController.text.trim());
-      print("Nombre de usuario actualizado");
 
-      // Preparar datos para Firestore
       Map<String, dynamic> userData = {
         'name': nameController.text.trim(),
         'email': emailController.text.trim(),
@@ -74,96 +65,40 @@ class _SignUpPageState extends State<SignUpPage> {
             : 0,
         'group': groupController.text.trim(),
         'class': classController.text.trim(),
+        'gender': selectedGender,
         'createdAt': FieldValue.serverTimestamp(),
         'lastLogin': FieldValue.serverTimestamp(),
         'isActive': true,
       };
 
-      print("Guardando datos en Firestore...");
-
-      // Guardar en Firestore con mejor manejo de errores
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
           .set(userData);
 
-      print("Datos guardados exitosamente en Firestore");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Cuenta creada correctamente. Redirigiendo..."),
+          backgroundColor: Color(0xFF60A5FA),
+          duration: Duration(seconds: 2),
+        ),
+      );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("✅ Cuenta creada correctamente. Redirigiendo..."),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
-            duration: Duration(seconds: 2),
-          ),
-        );
+      await FirebaseAuth.instance.signOut();
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) Navigator.pop(context);
 
-        await FirebaseAuth.instance.signOut();
-
-        await Future.delayed(const Duration(seconds: 2));
-
-        if (mounted) {
-          Navigator.pop(context); // Vuelve a la página anterior (LoginPage)
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      print("Error de Firebase Auth: ${e.code} - ${e.message}");
-      String errorMessage = _getAuthErrorMessage(e.code);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("❌ $errorMessage"),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } on FirebaseException catch (e) {
-      print("Error de Firestore: ${e.code} - ${e.message}");
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("❌ Error al guardar datos: ${e.message}"),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
     } catch (e) {
-      print("Error general: $e");
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("❌ Error inesperado. Intenta nuevamente."),
-            backgroundColor: Color(0xFF3A3A3C), // Color neutro oscuro para SnackBar
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ Error al crear cuenta"),
+          backgroundColor: Color(0xFF60A5FA),
+          duration: Duration(seconds: 4),
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
-    }
-  }
-
-  String _getAuthErrorMessage(String errorCode) {
-    switch (errorCode) {
-      case 'weak-password':
-        return 'La contraseña es muy débil';
-      case 'email-already-in-use':
-        return 'Este email ya está registrado';
-      case 'invalid-email':
-        return 'Email inválido';
-      case 'operation-not-allowed':
-        return 'Operación no permitida';
-      case 'user-disabled':
-        return 'Usuario deshabilitado';
-      default:
-        return 'Error al crear la cuenta';
+      setState(() => isLoading = false);
     }
   }
 
@@ -181,26 +116,27 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor, // Fondo muy oscuro para el Scaffold
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header reutilizable
-            // Asegúrate de que el Header tenga texto blanco o un diseño que contraste bien con el fondo oscuro.
-            const Header(
+            Header(
               title: '¡Bienvenido!',
-              subtitle: 'Crea tu cuenta y únete a nosotros',
+              subtitle: 'Crea tu cuenta y únete a SerenIA',
+              titleColor: primaryTextColor,
+              subtitleColor: secondaryTextColor,
+              accentColor: accentColorLight,
+              backgroundColor: bgColor,
             ),
-
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: cardBgColor, // Fondo de la tarjeta un poco más claro
+                  color: cardBgColor,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3), // Sombra más visible en oscuro
+                      color: Colors.black.withOpacity(0.15),
                       blurRadius: 15,
                       offset: const Offset(0, -5),
                     ),
@@ -211,47 +147,41 @@ class _SignUpPageState extends State<SignUpPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: primaryTextColor, // Texto blanco
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          // Asegúrate de que el LogoWidget se vea bien
-                          // sobre el fondo oscuro de cardBgColor.
-                        ],
+                      Text(
+                        'Crear Cuenta',
+                        style: GoogleFonts.poppins(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: primaryTextColor,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Crea tu cuenta para continuar',
-                        style: TextStyle(
+                        'Completa la información para continuar',
+                        style: GoogleFonts.poppins(
                           fontSize: 16,
-                          color: secondaryTextColor, // Texto gris claro
+                          color: secondaryTextColor,
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
+
                       CustomTextField(
                         icon: Icons.person_outline,
                         hintText: 'Nombre completo *',
                         controller: nameController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                       ),
                       const SizedBox(height: 16),
                       CustomTextField(
                         icon: Icons.email_outlined,
                         hintText: 'Correo electrónico *',
                         controller: emailController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
@@ -259,74 +189,154 @@ class _SignUpPageState extends State<SignUpPage> {
                         icon: Icons.calendar_today_outlined,
                         hintText: 'Edad',
                         controller: ageController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                         keyboardType: TextInputType.number,
                       ),
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        value: selectedGender,
+                        dropdownColor: const Color(0xFFF1F5F9), // Mismo fondo que los textfields
+                        decoration: InputDecoration(
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 12.0, right: 8.0),
+                            child: Icon(Icons.wc, color: const Color(0xFF3B82F6)),
+                          ),
+                          hintText: "Género *",
+                          hintStyle: GoogleFonts.poppins(
+                            color: accentColor,
+                            fontSize: 12,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide(
+                              color: const Color(0xFFE2E8F0), 
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide(
+                              color: const Color(0xFF3B82F6),
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                        ),
+                        style: GoogleFonts.poppins(
+                          color: const Color(0xFF1E3A8A),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        iconEnabledColor: const Color(0xFF3B82F6),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'Masculino', 
+                            child: Text(
+                              "Masculino",
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF1E3A8A),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Femenino', 
+                            child: Text(
+                              "Femenino",
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF1E3A8A),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Otro', 
+                            child: Text(
+                              "Otro",
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF1E3A8A),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() => selectedGender = value);
+                        },
+                      ),
+
                       const SizedBox(height: 16),
                       CustomTextField(
                         icon: Icons.school_outlined,
                         hintText: 'Grupo/Clase',
                         controller: groupController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                       ),
                       const SizedBox(height: 16),
                       CustomTextField(
                         icon: Icons.class_outlined,
                         hintText: 'Carrera',
                         controller: classController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                       ),
                       const SizedBox(height: 16),
                       CustomTextField(
                         icon: Icons.lock_outline,
                         hintText: 'Contraseña *',
+                        obscureText: true,
                         controller: passwordController,
-                        iconColor: accentColor, // Icono azul
-                        textColor: primaryTextColor, // Texto blanco
-                        hintColor: secondaryTextColor, // Hint gris claro
+                        iconColor: accentColorLight,
+                        textColor: primaryTextColor,
+                        hintColor: secondaryTextColor,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '* Campos obligatorios',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: secondaryTextColor, // Texto gris claro
+                          color: secondaryTextColor,
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Botón sin gradiente, con color sólido
                       ElevatedButton(
                         onPressed: isLoading ? null : signUp,
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
-                          backgroundColor: accentColor, // Fondo del botón azul sólido
-                          foregroundColor: primaryTextColor, // Color del texto del botón blanco
+                          backgroundColor: accentColorLight,
+                          foregroundColor: primaryTextColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          elevation: 5, // Una sombra sutil para el botón
-                          shadowColor: accentColor.withOpacity(0.3), // Sombra que combine con el botón
+                          elevation: 8,
+                          shadowColor: accentColorLight.withOpacity(0.4),
                         ),
                         child: isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white, // Indicador blanco para fondo azul
+                                  color: Colors.white,
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Crear Cuenta',
-                                style: TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF3B82F6),
                                 ),
                               ),
                       ),
@@ -336,18 +346,18 @@ class _SignUpPageState extends State<SignUpPage> {
                         children: [
                           Text(
                             '¿Ya tienes una cuenta? ',
-                            style: TextStyle(
-                              color: secondaryTextColor, // Texto gris claro
+                            style: GoogleFonts.poppins(
+                              color: secondaryTextColor,
                               fontSize: 14,
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => Navigator.pop(context), // Vuelve a la pantalla anterior (Login)
+                            onTap: () => Navigator.pop(context),
                             child: Text(
                               'Iniciar Sesión',
-                              style: TextStyle(
-                                color: accentColor, // Texto azul
-                                fontWeight: FontWeight.w600,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 14,
                               ),
                             ),

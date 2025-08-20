@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "347166273649",
+    "project_id": "ia-emociones",
+    "storage_bucket": "ia-emociones.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:347166273649:android:f52d19646f7aef611a6bd0",
+        "android_client_info": {
+          "package_name": "com.example.serenia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPmjVZXW6lYkR0BXKn6uWBO9tORj6lWd4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
