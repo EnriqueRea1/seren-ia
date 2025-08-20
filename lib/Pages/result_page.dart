@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Using the same color palette from QuestionnairePage
 const Color bgColor = Color(0xFF3B82F6);
@@ -118,7 +119,7 @@ REGLAS ESTRICTAS:
       final respuesta = await http.post(
         Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer ${dotenv.env['OPENROUTER_API_KEY']}',
           'Content-Type': 'application/json',
           'HTTP-Referer': '',
           'X-Title': 'SerenIA',

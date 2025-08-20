@@ -27,3 +27,6 @@ android/.gradle/
 
 # Archivos de sistema operativo
 .DS_Store
+
+# Ignorar archivos de secretos
+.env
