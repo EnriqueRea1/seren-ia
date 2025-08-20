@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Using the same color palette from QuestionnairePage
 const Color bgColor = Color(0xFF3B82F6);
