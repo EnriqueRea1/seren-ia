@@ -114,12 +114,14 @@ REGLAS ESTRICTAS:
 }
 
     final prompt = obtenerPromptPersonalizado();
+    const apiKey = String.fromEnvironment('OPENROUTER_API_KEY');
+
 
     try {
       final respuesta = await http.post(
         Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
         headers: {
-          'Authorization': 'Bearer ${dotenv.env['OPENROUTER_API_KEY']}',
+          'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
           'HTTP-Referer': '',
           'X-Title': 'SerenIA',
