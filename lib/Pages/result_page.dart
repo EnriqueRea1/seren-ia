@@ -49,105 +49,50 @@ class _ResultPageState extends State<ResultPage> {
     super.dispose();
   }
 
-  Future<void> obtenerRecomendacion() async {
+  // Reemplaza tu método obtenerRecomendacion() con este:
+
+Future<void> obtenerRecomendacion() async {
+  if (!mounted) return;
+
+  setState(() {
+    cargando = true;
+    mensajeError = null;
+  });
+
+  // URL de tu backend en producción - CAMBIA POR TU URL REAL
+  const String backendUrl = 'https://seren-ia-backend.onrender.com'; // Reemplaza con tu URL
+  
+  // Para desarrollo local usa: 'http://localhost:5000'
+  // Para producción usa tu URL de Render/Railway/etc.
+
+  try {
+    final response = await http.post(
+      Uri.parse('$backendUrl/api/recomendacion'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'total': widget.total,
+        'level': widget.level,
+        'carrera': widget.carrera,
+        'cuestionario': widget.cuestionario,
+      }),
+    );
+
     if (!mounted) return;
 
-    setState(() {
-      cargando = true;
-      mensajeError = null;
-    });
+    print("📡 Backend response status: ${response.statusCode}");
 
-    const descripcionesNiveles = ['mínimo', 'leve', 'moderado', 'severo'];
-    final nivelTexto = descripcionesNiveles[widget.level];
-
-    String obtenerPromptPersonalizado() {
-      String tipoEvaluacion = widget.cuestionario == 'BAI' 
-          ? 'Ansiedad (Beck Anxiety Inventory)' 
-          : widget.cuestionario == 'BDI' 
-          ? 'Depresión (Beck Depression Inventory)' 
-          : 'Estrés Percibido (Perceived Stress Scale)';
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
       
-      String contextoNivel = '';
-      switch (widget.level) {
-        case 0:
-          contextoNivel = 'Este es un nivel muy positivo. Enfócate en técnicas de mantenimiento del bienestar.';
-          break;
-        case 1:
-          contextoNivel = 'Este es un nivel leve que requiere atención preventiva y técnicas de autocuidado.';
-          break;
-        case 2:
-          contextoNivel = 'Este es un nivel moderado que requiere estrategias activas de manejo y posible apoyo adicional.';
-          break;
-        case 3:
-          contextoNivel = 'Este es un nivel severo que requiere atención inmediata y apoyo profesional.';
-          break;
-      }
-      
-     return '''
-Eres un psicólogo especializado en salud mental estudiantil. Un estudiante de ${widget.carrera} ha completado la evaluación de $tipoEvaluacion con estos resultados:
-
-- Puntaje: ${widget.total}
-- Nivel: $nivelTexto (${widget.level}/3)
-- Contexto: $contextoNivel
-
-Proporciona una recomendación específica (que sea bastante breve) con este formato EXACTO:
-
-📌 Interpretación del resultado
-[Texto breve de 1-2 oraciones explicando el nivel]
-Quiero que las estrategias sean prácticas y aplicables por el estudiante sin necesidad de asistencia profesional ni con areas de la universidad.
-💡 Estrategias recomendadas
-1. [Primera estrategia práctica]
-2. [Segunda estrategia práctica]
-3. [Tercera estrategia opcional]
-
-✨ Palabras finales
-[Mensaje motivacional breve]
-
-REGLAS ESTRICTAS:
-- NO uses markdown (**negritas** o _cursivas_)
-- NO uses asteriscos para énfasis
-- Usa solo los emojis proporcionados (📌💡✨) como separadores
-- Mantén un tono empático pero profesional
-- Enfócate en acciones que el estudiante pueda realizar por sí mismo, no recomiendes terapia o asistencia profesional o grupos de apoyo
-''';
-}
-
-    final prompt = obtenerPromptPersonalizado();
-    const apiKey = String.fromEnvironment('OPENROUTER_API_KEY');
-
-
-    try {
-      final respuesta = await http.post(
-        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-          'HTTP-Referer': '',
-          'X-Title': 'SerenIA',
-        },
-        body: jsonEncode({
-          'model': 'moonshotai/kimi-k2:free',
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'Eres un psicólogo especializado en salud mental estudiantil. Proporciona recomendaciones empáticas y profesionales basadas en resultados de cuestionarios psicológicos.'
-            },
-            {'role': 'user', 'content': prompt},
-          ],
-          'max_tokens': 200,
-          'temperature': 0.7,
-        }),
-      );
-
-      if (!mounted) return;
-
-      if (respuesta.statusCode == 200) {
-        final datos = jsonDecode(respuesta.body);
+      if (data['success'] == true && data['recomendacion'] != null) {
         setState(() {
-          recomendacion = datos['choices'][0]['message']['content'].trim();
+          recomendacion = data['recomendacion'];
           cargando = false;
         });
 
+        // Guardar en Firestore
         final user = FirebaseAuth.instance.currentUser;
         if (user != null && recomendacion != null) {
           await FirebaseFirestore.instance
@@ -164,35 +109,45 @@ REGLAS ESTRICTAS:
               });
         }
       } else {
-        String mensajeEspecifico;
-        switch (respuesta.statusCode) {
-          case 401:
-            mensajeEspecifico = 'Error 401: No autorizado.\nVerifica que tu API Key sea válida o tenga permisos.';
-            break;
-          case 404:
-            mensajeEspecifico = 'Error 404: No encontrado.\nVerifica que el modelo o la URL del endpoint estén correctos.';
-            break;
-          case 429:
-            mensajeEspecifico = 'Error 429: Demasiadas solicitudes.\nIntenta de nuevo más tarde.';
-            break;
-          default:
-            mensajeEspecifico = 'Error desconocido (${respuesta.statusCode}): ${respuesta.body}';
-        }
-
         setState(() {
-          mensajeError = mensajeEspecifico;
+          mensajeError = 'Error: ${data['error'] ?? 'Respuesta inválida del servidor'}';
           cargando = false;
         });
       }
-    } catch (e) {
-      if (!mounted) return;
+    } else {
+      // Manejar errores del backend
+      String errorMessage = 'Error del servidor';
+      
+      try {
+        final errorData = jsonDecode(response.body);
+        errorMessage = errorData['error'] ?? 'Error desconocido';
+      } catch (e) {
+        errorMessage = 'Error ${response.statusCode}: No se pudo procesar la respuesta';
+      }
 
       setState(() {
-        mensajeError = 'Error: $e';
+        mensajeError = errorMessage;
         cargando = false;
       });
     }
+  } catch (e) {
+    if (!mounted) return;
+
+    String errorMessage;
+    if (e.toString().contains('SocketException')) {
+      errorMessage = 'Error de conexión: Verifica tu conexión a internet';
+    } else if (e.toString().contains('TimeoutException')) {
+      errorMessage = 'Tiempo de espera agotado: El servidor tardó demasiado en responder';
+    } else {
+      errorMessage = 'Error de conexión: $e';
+    }
+
+    setState(() {
+      mensajeError = errorMessage;
+      cargando = false;
+    });
   }
+}
 
   Color _obtenerColorProgreso(int nivel) {
     switch (nivel) {
