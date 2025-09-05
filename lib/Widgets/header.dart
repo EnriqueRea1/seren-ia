@@ -53,7 +53,7 @@ class Header extends StatelessWidget {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: "Bienvenido a ",
+                  text: "Bienvenid@ a ",
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     color: subtitleColor,
