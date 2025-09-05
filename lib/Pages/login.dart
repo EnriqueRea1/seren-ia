@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             Header(
               title: '¡Hola!',
-              subtitle: 'Bienvenido de vuelta a SerenIA',
+              subtitle: 'Bienvenido a SerenIA',
               titleColor: primaryTextColor,
               subtitleColor: secondaryTextColor,
               accentColor: accentColorLight,
