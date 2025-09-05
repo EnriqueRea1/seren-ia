@@ -349,6 +349,58 @@ Future<void> obtenerRecomendacion() async {
                         ],
                       ),
                     ),
+
+                    Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(16),
+  margin: const EdgeInsets.only(top: 16),
+  decoration: BoxDecoration(
+    color: const Color(0xFFFEF3C7), // Amarillo suave
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(
+      color: const Color(0xFFD97706).withOpacity(0.3),
+      width: 1,
+    ),
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          Icons.info_outline_rounded,
+          color: const Color(0xFFD97706),
+          size: 20,
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Importante',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF92400E),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Esta recomendación es generada por IA y tiene fines informativos. Te sugerimos consultar con un profesional de la salud mental para una evaluación completa.',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: const Color(0xFF92400E),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
                     
                     const SizedBox(height: 24),
                     
