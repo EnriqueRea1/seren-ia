@@ -122,7 +122,7 @@ class _SignUpPageState extends State<SignUpPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Header(
-              title: '¡Bienvenido!',
+              title: '¡Bienvenid@!',
               subtitle: 'Crea tu cuenta y únete a SerenIA',
               titleColor: primaryTextColor,
               subtitleColor: secondaryTextColor,
